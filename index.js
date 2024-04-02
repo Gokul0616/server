@@ -135,8 +135,8 @@ app.post("/upload/:id", upload.single("file"), async (req, res) => {
         URL,
       });
       const publicId = result.public_id;
-      // const timeoutInMilliseconds = 7 * 24 * 60 * 60 * 1000;
-      const timeoutInMilliseconds = 30 * 1000;
+      const timeoutInMilliseconds = 7 * 24 * 60 * 60 * 1000;
+      // const timeoutInMilliseconds = 30 * 1000;
 
       setTimeout(async () => {
         const resource_type = result.resource_type;
