@@ -103,74 +103,6 @@ cloudinary.config({
 });
 
 const upload = multer();
-// app.post("/upload/:id", upload.single("file"), async (req, res) => {
-//   console.log(req.body.firstName);
-
-//   const userId = req.params.id;
-//   try {
-//     if (req.file) {
-//       const fileData = req.file;
-
-//       const base64String = fileData.buffer.toString("base64");
-
-//       const result = await cloudinary.uploader.upload(
-//         "data:image/png;base64," + base64String,
-//         {
-//           resource_type: "auto",
-//         },
-//         console.log("Uploading...")
-//       );
-
-//       console.log("Uploaded", new Date().toLocaleString());
-//       const URL = result.url;
-//       // console.log(URL);
-//       const resultDetails = await db.query(
-//         `UPDATE  user_details SET firstname = '${req.body.firstName}', lastname = '${req.body.lastName}',bio = '${req.body.bio}', dob = '${req.body.dob}',phone_number = '${req.body.phoneNumber}', profileurl = '${URL}' WHERE user_id = '${userId}' RETURNING *`
-//       );
-
-//       // console.log(resultDetails);
-//       res.json({
-//         result: "Uploaded Successfully",
-//       });
-//       const publicId = result.public_id;
-//       const timeoutInMilliseconds = 7 * 24 * 60 * 60 * 1000;
-//       // const timeoutInMilliseconds = 30 * 1000;
-
-//       setTimeout(async () => {
-//         const resource_type = result.resource_type;
-//         try {
-//           // Delete the resource from Cloudinary
-//           const deletionResult = await cloudinary.api.delete_resources(
-//             [publicId],
-//             {
-//               type: "upload",
-//               resource_type: resource_type,
-//             }
-//           );
-//           console.log(
-//             "Deleted from Cloudinary:",
-//             publicId,
-//             new Date().toLocaleString()
-//           );
-//         } catch (error) {
-//           console.error("Error deleting from Cloudinary:", error);
-//         }
-//       }, timeoutInMilliseconds);
-//       // res.send(result.url);
-//     } else {
-//       const result = await db.query(
-//         `UPDATE  user_details SET firstname = '${req.body.firstName}', lastname = '${req.body.lastName}',bio = '${req.body.bio}', dob = '${req.body.dob}',phone_number = '${req.body.phoneNumber}'  WHERE user_id = '${userId}' RETURNING *`
-//       );
-//       // console.log(result);
-//       res.json({
-//         result: "Uploaded Successfully",
-//       });
-//     }
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Failed to upload file to Cloudinary" });
-//   }
-// });
 
 app.post("/upload/:id", upload.single("file"), async (req, res) => {
   const userId = req.params.id;
@@ -267,9 +199,27 @@ app.post("/upload/:id", upload.single("file"), async (req, res) => {
   }
 });
 
-// app.get("/api/check/:userId", async (req, res) => {
-//   console.log(req.params.userId);
-// });
+app.get("/api/users/:id", async (req, res) => {
+  const userId = req.params.id;
+  // console.log(userId);
+
+  try {
+    const result = await db.query(
+      `SELECT * FROM user_details WHERE user_id != '${userId}'`
+    );
+    const usersDetails = result;
+    // console.log(usersDetails[0]);
+
+    if (usersDetails.length > 0) {
+      res.json(usersDetails[0]);
+    }
+  } catch (error) {
+    console.error("Error fetching users details:", error);
+    res.status(500).json({ error: "Failed to fetch users details" });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
