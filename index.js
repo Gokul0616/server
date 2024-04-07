@@ -219,6 +219,13 @@ app.get("/api/users/:id", async (req, res) => {
   }
 });
 
+app.post("/api/sendRequest/", async (req, res) => {
+  const { senderId, receiverId } = req.body;
+  const result = await db.query(
+    `INSERT INTO FriendRequests (sender_id, receiver_id) VALUES ('${senderId}',' ${receiverId}') RETURNING *`
+  );
+  res.send("success");
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
