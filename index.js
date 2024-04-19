@@ -55,7 +55,6 @@ app.post("/api/signup", async (req, res) => {
     res.json({ error: "Error signing up user" });
   }
 });
-
 app.post("/api/signin", async (req, res) => {
   const { email, password } = req.body;
 
@@ -79,7 +78,6 @@ app.post("/api/signin", async (req, res) => {
     res.json({ error: "Error signing in user" });
   }
 });
-
 app.get("/api/user/:userId", async (req, res) => {
   const userId = req.params.userId;
   const result = await db.query(
@@ -198,7 +196,6 @@ app.post("/upload/:id", upload.single("file"), async (req, res) => {
     res.json({ error: "Failed to update user details" });
   }
 });
-
 app.get("/api/users/:id", async (req, res) => {
   const userId = req.params.id;
   // console.log(userId);
@@ -218,7 +215,6 @@ app.get("/api/users/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users details" });
   }
 });
-
 app.post("/api/sendRequest/", async (req, res) => {
   const { senderId, receiverId } = req.body;
   const result = await db.query(
@@ -226,7 +222,6 @@ app.post("/api/sendRequest/", async (req, res) => {
   );
   res.send("success");
 });
-
 app.get("/api/checkRequest/:id", async (req, res) => {
   const userId = req.params.id;
   const result = await db.query(
@@ -235,7 +230,6 @@ app.get("/api/checkRequest/:id", async (req, res) => {
   // console.log(result[0]);
   res.json(result[0]);
 });
-
 app.get("/api/requested/:id", async (req, res) => {
   const userId = req.params.id;
   const result = await db.query(
@@ -258,7 +252,6 @@ app.delete("/api/request-delete/:id/:currId", async (req, res) => {
   console.log(result);
   res.send("success");
 });
-
 app.get("/api/requests/:id", async (req, res) => {
   const userId = req.params.id;
   const result = await db.query(
@@ -274,7 +267,6 @@ app.get("/api/requests/:id", async (req, res) => {
     res.json(uniqueSenderIds);
   }
 });
-
 app.post("/api/request-accept/:userid/:currId", async (req, res) => {
   const userId = req.params.userid;
   const Curruser = req.params.currId;
@@ -291,18 +283,35 @@ app.post("/api/request-accept/:userid/:currId", async (req, res) => {
     res.send("failed");
   }
 });
-
 app.get("/api/usermessages/:id", async (req, res) => {
   const userId = req.params.id;
-  const result = await db.query(
-    `SELECT DISTINCT receiver_id FROM FriendRequests WHERE sender_id = '${userId}' AND status = 'accepted'`
-  );
-  // console.log(result[0]);
-  const senderIds = result[0].map((item) => item.receiver_id);
-  // console.log(senderIds);
-  res.send(senderIds);
-});
+  // console.log(userId);
+  try {
+    const result = await db.query(
+      `SELECT sender_id, receiver_id FROM FriendRequests WHERE (sender_id = '${userId}' OR receiver_id = '${userId}') AND status = 'accepted'`
+    );
+    // console.log(result[0]);
+    const idsArray = result[0].flatMap(({ sender_id, receiver_id }) => [
+      sender_id,
+      receiver_id,
+    ]);
 
+    // console.log(idsArray);
+    const uniqueIDs = new Set(idsArray);
+
+    // Convert the Set back to an array
+    const uniqueArray = Array.from(uniqueIDs);
+
+    // Remove the userId from the array
+    const filteredArray = uniqueArray.filter((id) => id !== userId);
+
+    // console.log(filteredArray);
+    res.send(filteredArray);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch user messages" });
+  }
+});
 app.get("/api/usermessages/:id/:currId", async (req, res) => {
   const userId = req.params.id;
   const Curruser = req.params.currId;
