@@ -222,8 +222,39 @@ app.get("/api/users/:id", async (req, res) => {
 app.post("/api/sendRequest/", async (req, res) => {
   const { senderId, receiverId } = req.body;
   const result = await db.query(
-    `INSERT INTO FriendRequests (sender_id, receiver_id) VALUES ('${senderId}',' ${receiverId}') RETURNING *`
+    `INSERT INTO FriendRequests (sender_id, receiver_id) VALUES ('${senderId}','${receiverId}') RETURNING *`
   );
+  res.send("success");
+});
+
+app.get("/api/checkRequest/:id", async (req, res) => {
+  const userId = req.params.id;
+  const result = await db.query(
+    `SELECT receiver_id FROM FriendRequests WHERE sender_id = '${userId}'`
+  );
+  // console.log(result[0]);
+  res.json(result[0]);
+});
+
+app.get("/api/requested/:id", async (req, res) => {
+  const userId = req.params.id;
+  const result = await db.query(
+    `SELECT receiver_id FROM FriendRequests WHERE sender_id = '${userId}'`
+  );
+  // console.log( result[0] );
+  const receiverIds = result[0].map((item) => item.receiver_id);
+  const uniqueReceiverIds = [...new Set(receiverIds)]; // Remove duplicates
+  // console.log(uniqueReceiverIds);
+
+  res.json(uniqueReceiverIds);
+});
+app.delete("/api/request-delete/:id/:currId", async (req, res) => {
+  const userId = req.params.id;
+  const Curruser = req.params.currId;
+  const result = await db.query(
+    `DELETE FROM FriendRequests WHERE receiver_id = '${userId}' AND sender_id = '${Curruser}' RETURNING *`
+  );
+  // console.log(result);
   res.send("success");
 });
 
