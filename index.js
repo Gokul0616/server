@@ -292,6 +292,61 @@ app.post("/api/request-accept/:userid/:currId", async (req, res) => {
   }
 });
 
+app.get("/api/usermessages/:id", async (req, res) => {
+  const userId = req.params.id;
+  const result = await db.query(
+    `SELECT DISTINCT receiver_id FROM FriendRequests WHERE sender_id = '${userId}' AND status = 'accepted'`
+  );
+  // console.log(result[0]);
+  const senderIds = result[0].map((item) => item.receiver_id);
+  // console.log(senderIds);
+  res.send(senderIds);
+});
+
+app.get("/api/usermessages/:id/:currId", async (req, res) => {
+  const userId = req.params.id;
+  const Curruser = req.params.currId;
+  try {
+    const result = await db.query(
+      `SELECT * from usermessages where sender_id='${userId}' AND receiver_id = '${Curruser}'`
+    );
+    // console.log(result[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: "Failed to fetch user messages" });
+  }
+});
+app.get("/api/message/:id/:currId", async (req, res) => {
+  const userId = req.params.id;
+  const Curruser = req.params.currId;
+  try {
+    const result = await db.query(
+      `SELECT * from usermessages where sender_id='${userId}' AND receiver_id = '${Curruser}'`
+    );
+    // console.log(result[0]);
+    return res.json(result[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch user messages" });
+  }
+});
+app.post("/api/message/:id/:currUser", async (req, res) => {
+  const userId = req.params.id;
+  const currUser = req.params.currUser;
+  const { message } = req.body;
+
+  const messageId = uuidv4(); // Generate a random UUID for the message
+
+  try {
+    const result = await db.query(
+      `INSERT INTO usermessages (message_id, sender_id, receiver_id, message_content) VALUES ('${messageId}', '${userId}', '${currUser}', '${message}') RETURNING *`
+    );
+    if (result[0].length > 0) res.send("success");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
