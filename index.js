@@ -239,9 +239,9 @@ app.get("/api/checkRequest/:id", async (req, res) => {
 app.get("/api/requested/:id", async (req, res) => {
   const userId = req.params.id;
   const result = await db.query(
-    `SELECT receiver_id FROM FriendRequests WHERE sender_id = '${userId}'`
+    `SELECT receiver_id FROM FriendRequests WHERE sender_id = '${userId}' AND status = 'pending'`
   );
-  // console.log( result[0] );
+  // console.log(result[0]);
   const receiverIds = result[0].map((item) => item.receiver_id);
   const uniqueReceiverIds = [...new Set(receiverIds)]; // Remove duplicates
   // console.log(uniqueReceiverIds);
@@ -251,11 +251,45 @@ app.get("/api/requested/:id", async (req, res) => {
 app.delete("/api/request-delete/:id/:currId", async (req, res) => {
   const userId = req.params.id;
   const Curruser = req.params.currId;
+  // console.log(userId);
   const result = await db.query(
     `DELETE FROM FriendRequests WHERE receiver_id = '${userId}' AND sender_id = '${Curruser}' RETURNING *`
   );
-  // console.log(result);
+  console.log(result);
   res.send("success");
+});
+
+app.get("/api/requests/:id", async (req, res) => {
+  const userId = req.params.id;
+  const result = await db.query(
+    `SELECT sender_id FROM FriendRequests WHERE receiver_id = '${userId}' AND status = 'pending'`
+  );
+  // console.log(result);
+  if (!result[0]) {
+    res.json("No Requests");
+  } else {
+    const senderIds = result[0].map((item) => item.sender_id);
+    const uniqueSenderIds = [...new Set(senderIds)]; // Remove duplicates
+    // console.log(uniqueSenderIds);
+    res.json(uniqueSenderIds);
+  }
+});
+
+app.post("/api/request-accept/:userid/:currId", async (req, res) => {
+  const userId = req.params.userid;
+  const Curruser = req.params.currId;
+  // console.log(userId);
+  // console.log(Curruser);
+  const result = await db.query(
+    // Update query without RETURNING *
+    `UPDATE  friendrequests SET  status = 'accepted' WHERE sender_id = '${userId}'  AND receiver_id = '${Curruser}' RETURNING *`
+  );
+
+  if (result[0].length > 0) {
+    res.send("success");
+  } else {
+    res.send("failed");
+  }
 });
 
 app.listen(PORT, () => {
