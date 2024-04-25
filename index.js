@@ -224,12 +224,18 @@ app.post("/api/sendRequest/", async (req, res) => {
 });
 app.get("/api/checkRequest/:id", async (req, res) => {
   const userId = req.params.id;
+  // console.log(userId);
   const result = await db.query(
-    `SELECT receiver_id FROM FriendRequests WHERE sender_id = '${userId}'`
+    `SELECT sender_id, receiver_id FROM FriendRequests WHERE sender_id = '${userId}' OR receiver_id = '${userId}'`
   );
-  // console.log(result[0]);
-  res.json(result[0]);
+  const ids = result[0]
+    .map((item) => [item.sender_id, item.receiver_id])
+    .flat();
+  const uniqueIds = Array.from(new Set(ids)).filter((id) => id !== userId);
+  // console.log(uniqueIds);
+  res.json(uniqueIds);
 });
+
 app.get("/api/requested/:id", async (req, res) => {
   const userId = req.params.id;
   const result = await db.query(
