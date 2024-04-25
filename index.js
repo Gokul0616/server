@@ -312,19 +312,7 @@ app.get("/api/usermessages/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user messages" });
   }
 });
-app.get("/api/usermessages/:id/:currId", async (req, res) => {
-  const userId = req.params.id;
-  const Curruser = req.params.currId;
-  try {
-    const result = await db.query(
-      `SELECT * from usermessages where sender_id='${userId}' AND receiver_id = '${Curruser}'`
-    );
-    // console.log(result[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: "Failed to fetch user messages" });
-  }
-});
+
 app.get("/api/message/:id/:currId", async (req, res) => {
   const userId = req.params.id;
   const Curruser = req.params.currId;
@@ -356,6 +344,23 @@ app.post("/api/message/:id/:currUser", async (req, res) => {
     res.status(500).json({ error: "Failed to send message" });
   }
 });
+app.get("/api/usernewmessage/:id/:currUser", async (req, res) => {
+  const userId = req.params.id;
+  const currUser = req.params.currUser;
+  try {
+    const result = await db.query(
+      `SELECT * FROM usermessages WHERE 
+      (sender_id = '${userId}' OR receiver_id = '${userId}') 
+      AND (sender_id = '${currUser}' OR receiver_id = '${currUser}')`
+    );
+    // console.log(result[0]);
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error fetching user messages:", error);
+    res.status(500).json({ error: "Failed to fetch user messages" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
