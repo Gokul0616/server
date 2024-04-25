@@ -330,13 +330,23 @@ app.get("/api/message/:id/:currId", async (req, res) => {
 app.post("/api/message/:id/:currUser", async (req, res) => {
   const userId = req.params.id;
   const currUser = req.params.currUser;
-  const { message } = req.body;
+  const { message, messageId } = req.body;
 
-  const messageId = uuidv4(); // Generate a random UUID for the message
+  // const messageId = uuidv4(); // Generate a random UUID for the message
+  const timestamp = new Date().toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    millisecond: "2-digit",
+    hour12: true,
+  });
 
   try {
     const result = await db.query(
-      `INSERT INTO usermessages (message_id, sender_id, receiver_id, message_content) VALUES ('${messageId}', '${userId}', '${currUser}', '${message}') RETURNING *`
+      `INSERT INTO usermessages (message_id, sender_id, receiver_id, message_content,timestamp) VALUES ('${messageId}', '${userId}', '${currUser}', '${message}', '${timestamp}') RETURNING *`
     );
     if (result[0].length > 0) res.send("success");
   } catch (err) {
