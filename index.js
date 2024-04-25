@@ -330,19 +330,9 @@ app.get("/api/message/:id/:currId", async (req, res) => {
 app.post("/api/message/:id/:currUser", async (req, res) => {
   const userId = req.params.id;
   const currUser = req.params.currUser;
-  const { message, messageId } = req.body;
+  const { message, messageId, timestamp } = req.body;
 
   // const messageId = uuidv4(); // Generate a random UUID for the message
-  const timestamp = new Date().toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    millisecond: "2-digit",
-    hour12: true,
-  });
 
   try {
     const result = await db.query(
