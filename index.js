@@ -7,6 +7,7 @@ import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import { Sequelize } from "sequelize";
+import nodemailer from "nodemailer";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,18 @@ const db = new Sequelize(process.env.DB_URL, {
     },
   },
 });
+const generateToken = () => {
+  // Generate a random string of characters to use as the token
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const tokenLength = 32; // You can adjust the length of the token as needed
+  let token = "";
+  for (let i = 0; i < tokenLength; i++) {
+    token += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return token;
+};
+
 db.sync().then(() => console.log("Database connected"));
 // Temporary in-memory database (replace with your actual database)
 
@@ -366,6 +379,99 @@ app.get("/api/usernewmessage/:id/:currUser", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user messages" });
   }
 });
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: `${process.env.EMAIL}`,
+    pass: `${process.env.PASSWORD}`,
+  },
+});
+
+const sendResetEmail = (email, token) => {
+  const resetLink = `${process.env.FRONTEND_PORT}/reset-password?token=${token}`; // Change this URL to your frontend reset password page
+  const mailOptions = {
+    from: {
+      name: "Chaty",
+      address: `${process.env.EMAIL}`,
+    },
+    to: email,
+    subject: "Password Reset",
+    text: `To reset your password, click on the following link: ${resetLink}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email sent: " + info.response);
+    }
+  });
+};
+
+app.post("/auth/check-user", async (req, res) => {
+  const Email = req.body.email;
+  // console.log(Email);
+  const result = await db.query(`SELECT * FROM users WHERE email = '${Email}'`);
+  // console.log(result[0]);
+  const token = generateToken();
+  if (result[0].length > 0) {
+    const checkResult = await db.query(
+      `SELECT * FROM PasswordReset WHERE email = '${Email}'`
+    );
+    // console.log(checkResult[0].length == 0);
+
+    if (checkResult[0].length > 0) {
+      await db.query(
+        `UPDATE  PasswordReset set token = '${token}' ,visit = false where email='${Email}'`
+      );
+      sendResetEmail(Email, token);
+
+      res.send("success");
+    } else if (checkResult[0].length == 0) {
+      await db.query(
+        `INSERT INTO   PasswordReset  (email, token) VALUES ('${Email}', '${token}')`
+      );
+      sendResetEmail(Email, token);
+      res.send("success");
+    }
+  } else {
+    res.send("failure");
+  }
+});
+app.post("/auth/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+  // console.log(token);
+  try {
+    // Check if the token is valid for the given email
+    const resetToken = await db.query(
+      `SELECT * FROM PasswordReset WHERE token = '${token}'`
+    );
+    // console.log(resetToken[0][0]);
+    const visit = resetToken[0][0].visit;
+    const email = resetToken[0][0].email;
+    if (visit == false) {
+      // // Update the user's password in the database
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await db.query(
+        `UPDATE users SET password = '${hashedPassword}' WHERE email = '${email}'`
+      );
+      await db.query(
+        `Update passwordreset SET visit = true WHERE email= '${email}' AND  token = '${token}'`
+      );
+      res.status(200).json({ message: "Password reset successfully" });
+    } else {
+      return res.json({ error: "Invalid or expired token" });
+    }
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
