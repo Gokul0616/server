@@ -520,6 +520,22 @@ app.get("/api/usermessages/unread-count/:id/:sendId", async (req, res) => {
     res.status(500).json({ error: "Failed to count unread messages" });
   }
 });
+app.get("/api/search", async (req, res) => {
+  const query = req.query.query;
+  // console.log(query);
+  try {
+    // Assuming your database table is named 'users' and has a column 'firstname'
+    const result = await db.query(
+      `SELECT id FROM users WHERE firstname LIKE '%${query}%' `
+    );
+    // console.log(result[0]);
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error searching users:", error);
+    res.status(500).json({ error: "Failed to search users" });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
