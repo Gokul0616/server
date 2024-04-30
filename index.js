@@ -504,9 +504,17 @@ app.get("/api/usermessages/unread-count/:id/:sendId", async (req, res) => {
       `SELECT COUNT(*) AS unreadCount FROM usermessages WHERE receiver_id = '${sendId}' AND sender_id = '${id}' AND is_read = false`
     );
 
-    const unreadCount = result[0][0].unreadcount; // Use default value of 0 if unreadCount is undefined
-    //  console.log(unreadCount);
-    res.json({ unreadCount });
+    const unreadCount = result[0][0].unreadcount;
+    const lastMessageQuery = `
+      SELECT *
+      FROM usermessages
+      WHERE receiver_id = '${sendId}' AND sender_id = '${id}'
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `;
+    const lastMessageResult = await db.query(lastMessageQuery);
+    const lastmessage = lastMessageResult[0][0].message_content;
+    res.json({ unreadCount, lastmessage });
   } catch (error) {
     console.error("Error counting unread messages:", error);
     res.status(500).json({ error: "Failed to count unread messages" });
