@@ -459,9 +459,9 @@ app.post("/auth/reset-password", async (req, res) => {
       await db.query(
         `UPDATE users SET password = '${hashedPassword}' WHERE email = '${email}'`
       );
-     await db.query(
-       `DELETE FROM PasswordReset WHERE email = '${email}' AND token = '${token}'`
-     );
+      await db.query(
+        `DELETE FROM PasswordReset WHERE email = '${email}' AND token = '${token}'`
+      );
 
       res.status(200).json({ message: "Password reset successfully" });
     } else {
@@ -473,19 +473,46 @@ app.post("/auth/reset-password", async (req, res) => {
   }
 });
 
- app.post("/auth/check-reset-password", async (req, res) => {
-   const token = req.body.token;
-   //  console.log(token);
-   const resetToken = await db.query(
-     `SELECT * FROM PasswordReset WHERE token = '${token}'`
-   );
-   //  console.log(resetToken[0].length > 0);
-   if (resetToken[0].length > 0) {
-     res.send("success");
-   } else {
-     res.send("failure");
-   }
- });
+app.post("/auth/check-reset-password", async (req, res) => {
+  const token = req.body.token;
+  //  console.log(token);
+  const resetToken = await db.query(
+    `SELECT * FROM PasswordReset WHERE token = '${token}'`
+  );
+  //  console.log(resetToken[0].length > 0);
+  if (resetToken[0].length > 0) {
+    res.send("success");
+  } else {
+    res.send("failure");
+  }
+});
+
+app.get("/api/usermessages/read/:id/:currId", async (req, res) => {
+  const currId = req.params.currId;
+  const id = req.params.id;
+  //  console.log(currId, id);
+  const result = await db.query(
+    `UPDATE usermessages SET is_read = true WHERE sender_id = '${id}' AND receiver_id = '${currId}'`
+  );
+});
+app.get("/api/usermessages/unread-count/:id/:sendId", async (req, res) => {
+  const sendId = req.params.sendId;
+  const id = req.params.id;
+  //  console.log(sendId, id);
+  try {
+    const result = await db.query(
+      `SELECT COUNT(*) AS unreadCount FROM usermessages WHERE receiver_id = '${sendId}' AND sender_id = '${id}' AND is_read = false`
+    );
+
+    const unreadCount = result[0][0].unreadcount; // Use default value of 0 if unreadCount is undefined
+    //  console.log(unreadCount);
+    res.json({ unreadCount });
+  } catch (error) {
+    console.error("Error counting unread messages:", error);
+    res.status(500).json({ error: "Failed to count unread messages" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
