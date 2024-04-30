@@ -459,9 +459,10 @@ app.post("/auth/reset-password", async (req, res) => {
       await db.query(
         `UPDATE users SET password = '${hashedPassword}' WHERE email = '${email}'`
       );
-      await db.query(
-        `Update passwordreset SET visit = true WHERE email= '${email}' AND  token = '${token}'`
-      );
+     await db.query(
+       `DELETE FROM PasswordReset WHERE email = '${email}' AND token = '${token}'`
+     );
+
       res.status(200).json({ message: "Password reset successfully" });
     } else {
       return res.json({ error: "Invalid or expired token" });
