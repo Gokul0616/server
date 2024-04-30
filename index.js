@@ -472,7 +472,19 @@ app.post("/auth/reset-password", async (req, res) => {
   }
 });
 
-
+ app.post("/auth/check-reset-password", async (req, res) => {
+   const token = req.body.token;
+   //  console.log(token);
+   const resetToken = await db.query(
+     `SELECT * FROM PasswordReset WHERE token = '${token}'`
+   );
+   //  console.log(resetToken[0].length > 0);
+   if (resetToken[0].length > 0) {
+     res.send("success");
+   } else {
+     res.send("failure");
+   }
+ });
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
